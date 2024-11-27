@@ -1,49 +1,5 @@
 import math
 
-def get_adjacent_edge(graph, vertex_a, vertex_b):
-    for edge in graph.edges:
-        if Edge(vertex_a, vertex_b) == edge:
-            return edge
-    return None
-        
-
-def dijkstras_algo(graph, starting_vertex, target_vertex):
-    # set inital distances
-    dist = {}
-    for vertex in graph.vertices:
-        dist[vertex]=math.inf
-    dist[starting_vertex] = 0
-
-    unvisited_vertices = graph.vertices
-    visited = []
-
-
-    curr = starting_vertex
-    print(f"Looking for shortest path between {starting_vertex} and {target_vertex}")
-
-    while dist[curr] != math.inf and target_vertex in unvisited_vertices:
-        print(f"Current vertex: {curr}\n Unvisited: {unvisited_vertices}\n Current distances: {dist}\n\n")
-        for unvisited_vertex in unvisited_vertices:
-            adjacent_edge = get_adjacent_edge(graph, curr, unvisited_vertex)
-            if (adjacent_edge):
-                y = dist[curr] + adjacent_edge.weight
-                dist[unvisited_vertex] = min(y, dist[unvisited_vertex])
-                
-        unvisited_vertices.remove(curr)
-        visited.append(curr)
-        # find unvisited node with lowest distance
-        min_distance = min([dist[unvisited_vertex] for unvisited_vertex in unvisited_vertices])
-        closest_vertices = [vertex for vertex, distance in dist.items() if distance == min_distance]
-        curr = closest_vertices[0]
-    
-    print(f"Algorithm complete. Distances: {dist}. Visited nodes in order: {visited}")
-
-
-
-
-def get_sorted_vertices(vertices): 
-    return sorted(vertices, key=lambda v: v.value)
-
 class Vertex:
     value = ""
     def __init__(self, value):
@@ -59,7 +15,7 @@ class Edge:
     vertices = []
     weight = 1
     def __init__(self, vertexA, vertexB, weight=1):
-        self.vertices = get_sorted_vertices([vertexA, vertexB])
+        self.vertices = sorted([vertexA, vertexB], key=lambda v: v.value)
         self.weight = weight
     def __repr__(self):
         return f"\nVertices:{self.vertices} Weight {self.weight}"
@@ -78,77 +34,85 @@ class Graph:
         if edge.vertices not in [edge.vertices for edge in self.edges]:
             self.edges.append(edge)
 
+    def get_edges_for_vertex(self, v):
+        """
+        Given a vertex, get all edges connecting it
+        :return: a tuple containing connecting edges and vertices
+        """
+        return [edge for edge in self.edges if v in edge.vertices]
+    
+    
+    def dijkstras_algo(self, starting_vertex, target_vertex):
+        # set inital distances
+        dist = {}
+        for vertex in self.vertices:
+            dist[vertex]=math.inf
+        dist[starting_vertex] = 0
+
+        unvisited_vertices = self.vertices
+        visited = []
+        curr = starting_vertex
+        print(f"Looking for shortest path between {starting_vertex} and {target_vertex}")
+
+        while dist[curr] != math.inf:
+            print(f"Current vertex: {curr}\n Unvisited: {unvisited_vertices}\n Current distances: {dist}\n")
+            connecting_edges = self.get_edges_for_vertex(curr)                    
+            # interate through each edge between curr and something else
+            for edge in connecting_edges:
+                # the other vertex in the edge is the first vertex that isn't curr
+                other = next(filter(lambda v: v != curr, edge.vertices))
+                if other in unvisited_vertices:                
+                    y = dist[curr] + edge.weight                
+                    dist[other] = min(y, dist[other])
+            unvisited_vertices.remove(curr)
+            visited.append(curr)
+            if len(unvisited_vertices) == 0: break
+            # find unvisited node with lowest distance
+            # get tuples of distances like (vertex, distance)
+            unvisited_dists = [(vertex, dist[vertex]) for vertex in unvisited_vertices]
+            # sort them such that the first item is the closest
+            closest_vertices = sorted(unvisited_dists, key=lambda item: item[1])
+            curr = closest_vertices[0][0]
+        print(f"Algorithm complete. Distances: {dist}. Visited nodes in order: {visited}")
+
     def __repr__(self):
         return f"Vertices: {self.vertices} \nEdges: {self.edges}"
 
-vertices = [Vertex('d'),
+
+
+vertices = [Vertex('a'),
+            Vertex('b'),
+            Vertex('c'),
+            Vertex('d'),
             Vertex('e'),
             Vertex('f'),
             Vertex('g'),
-            Vertex('h'),
-            Vertex('i'),
-            Vertex('j'),
-            Vertex('k'),
-            Vertex('l'),
-            Vertex('m'),
-            Vertex('n'),
-            Vertex('o'),            
-            Vertex('p'),   
-            Vertex('q'),
-            Vertex('r'),
+            Vertex('z'),
         ]
 graph = Graph(vertices)
 
+# v0​↔v1​ (weight 4)
+graph.add_edge(Edge(Vertex('a'), Vertex('b'), 4))
+# v1​↔v3​ (weight 6)
+graph.add_edge(Edge(Vertex('a'), Vertex('c'), 3))
+# v3​↔v5​ (weight 3)
+graph.add_edge(Edge(Vertex('b'), Vertex('c'), 2))
+# v5​↔v7​ (weight 7)
+graph.add_edge(Edge(Vertex('b'), Vertex('d'), 5))
+# v7​↔v9​ (weight 5)
+graph.add_edge(Edge(Vertex('c'), Vertex('d'), 3))
+# v0​↔v2​ (weight 2)
+graph.add_edge(Edge(Vertex('c'), Vertex('e'), 6))
+# v2​↔v4​ (weight 8)
+graph.add_edge(Edge(Vertex('d'), Vertex('e'), 1))
+graph.add_edge(Edge(Vertex('d'), Vertex('f'), 5))
+# v4​↔v6​ (weight 3)
+graph.add_edge(Edge(Vertex('e'), Vertex('g'), 5))
+# v6​↔v8​ (weight 6)
+graph.add_edge(Edge(Vertex('f'), Vertex('g'), 2))
+# v8​↔v9​ (weight 4)
+graph.add_edge(Edge(Vertex('z'), Vertex('g'), 4))
+# v3​↔v8​ (weight 7)
+graph.add_edge(Edge(Vertex('z'), Vertex('f'), 7))
 
-
-graph.add_edge(Edge(Vertex('d'), Vertex('g'), 16))
-graph.add_edge(Edge(Vertex('d'), Vertex('e'), 18))
-graph.add_edge(Edge(Vertex('d'), Vertex('h'), 15))
-graph.add_edge(Edge(Vertex('e'), Vertex('f'), 9))
-graph.add_edge(Edge(Vertex('e'), Vertex('h'), 25))
-graph.add_edge(Edge(Vertex('e'), Vertex('d'), 18))
-graph.add_edge(Edge(Vertex('f'), Vertex('e'), 9))
-graph.add_edge(Edge(Vertex('f'), Vertex('h'), 29))
-graph.add_edge(Edge(Vertex('g'), Vertex('d'), 16))
-graph.add_edge(Edge(Vertex('g'), Vertex('h'), 31))
-graph.add_edge(Edge(Vertex('g'), Vertex('j'), 23))
-graph.add_edge(Edge(Vertex('h'), Vertex('d'), 15))
-graph.add_edge(Edge(Vertex('h'), Vertex('e'), 25))
-graph.add_edge(Edge(Vertex('h'), Vertex('g'), 31))
-graph.add_edge(Edge(Vertex('h'), Vertex('j'), 13))
-graph.add_edge(Edge(Vertex('h'), Vertex('k'), 10))
-graph.add_edge(Edge(Vertex('h'), Vertex('i'), 27))
-graph.add_edge(Edge(Vertex('h'), Vertex('f'), 29))
-graph.add_edge(Edge(Vertex('j'), Vertex('g'), 23))
-graph.add_edge(Edge(Vertex('j'), Vertex('h'), 13))
-graph.add_edge(Edge(Vertex('j'), Vertex('k'), 28))
-graph.add_edge(Edge(Vertex('j'), Vertex('n'), 33))
-graph.add_edge(Edge(Vertex('k'), Vertex('j'), 28))
-graph.add_edge(Edge(Vertex('k'), Vertex('h'), 10))
-graph.add_edge(Edge(Vertex('k'), Vertex('n'), 14))
-graph.add_edge(Edge(Vertex('k'), Vertex('o'), 34))
-graph.add_edge(Edge(Vertex('k'), Vertex('i'), 26))
-graph.add_edge(Edge(Vertex('k'), Vertex('m'), 11))
-graph.add_edge(Edge(Vertex('m'), Vertex('k'), 11))
-graph.add_edge(Edge(Vertex('m'), Vertex('n'), 17))
-graph.add_edge(Edge(Vertex('m'), Vertex('q'), 12))
-graph.add_edge(Edge(Vertex('n'), Vertex('m'), 17))
-graph.add_edge(Edge(Vertex('n'), Vertex('k'), 14))
-graph.add_edge(Edge(Vertex('n'), Vertex('o'), 30))
-graph.add_edge(Edge(Vertex('n'), Vertex('p'), 32))
-graph.add_edge(Edge(Vertex('n'), Vertex('r'), 20))
-graph.add_edge(Edge(Vertex('o'), Vertex('n'), 30))
-graph.add_edge(Edge(Vertex('o'), Vertex('k'), 34))
-graph.add_edge(Edge(Vertex('o'), Vertex('r'), 24))
-graph.add_edge(Edge(Vertex('o'), Vertex('l'), 35))
-graph.add_edge(Edge(Vertex('o'), Vertex('q'), 19))
-graph.add_edge(Edge(Vertex('p'), Vertex('n'), 32))
-graph.add_edge(Edge(Vertex('p'), Vertex('q'), 21))
-graph.add_edge(Edge(Vertex('q'), Vertex('p'), 21))
-graph.add_edge(Edge(Vertex('q'), Vertex('m'), 12))
-graph.add_edge(Edge(Vertex('q'), Vertex('o'), 19))
-graph.add_edge(Edge(Vertex('q'), Vertex('r'), 22))
-graph.add_edge(Edge(Vertex('r'), Vertex('o'), 22))
-graph.add_edge(Edge(Vertex('r'), Vertex('q'), 24))
-
-dijkstras_algo(graph, vertices[2], vertices[13])
+graph.dijkstras_algo(vertices[0], vertices[-1])
